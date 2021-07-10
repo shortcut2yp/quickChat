@@ -3,7 +3,7 @@ import 'font-awesome/css/font-awesome.css'
 import Main from './components/Main'
 import { io } from 'socket.io-client'
 
-const socket = io('https://git.heroku.com/quick-chat999.git')
+const socket = io('https://quick-chat999.herokuapp.com/')
 
 function App() {
 	return <Main socket={socket} />
