@@ -51,3 +51,32 @@ code {
 	height: cal(100%-2px) !important;
 	overflow-y: auto;
 }
+.border-right-info {
+	border-right: 1px #0deaf0 solid;
+}
+
+.cursor-pointer {
+	cursor: pointer;
+}
+
+.online {
+	background-color: #4cd137;
+	position: absolute;
+	bottom: 0;
+	left: 40px;
+	height: 20px;
+	width: 20px;
+	border: 3px solid white;
+	border-radius: 50%;
+}
+
+.offline {
+	background-color: #ce1515;
+	position: absolute;
+	bottom: 0;
+	left: 40px;
+	height: 20px;
+	width: 20px;
+	border: 3px solid white;
+	border-radius: 50%;
+}

@@ -1,6 +1,6 @@
 import Login from './Login'
 import Chat from './Chat'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 
 const Main = ({ socket }) => {
 	const [newUser, setNewUser] = useState('')
@@ -9,25 +9,68 @@ const Main = ({ socket }) => {
 	const [message, setMessage] = useState('')
 	const [messages, setMessages] = useState([])
 
+	const findUser = useCallback(
+		userId => {
+			const userIndex = users.findIndex(user => user.userId === userId)
+			return userIndex >= 0
+		},
+		[users]
+	)
+
+	const checkIfUserExists = useCallback(() => {
+		const sessionId = localStorage.getItem('sessionId')
+		if (sessionId) {
+			socket.auth = { sessionId }
+			socket.connect()
+		}
+	}, [socket])
+
+	const handleConnectionStatus = useCallback(
+		(userId, status) => {
+			const userIndex = users.findIndex(u => u.userId === userId)
+			if (userIndex >= 0) {
+				users[userIndex].connected = status
+				setUsers([...users])
+			}
+		},
+		[users, setUsers]
+	)
+
+	const userConnected = useCallback(
+		({ userId, username }) => {
+			if (user.userId !== userId) {
+				const userExists = findUser(userId)
+				if (userExists) {
+					handleConnectionStatus(userId, true)
+				} else {
+					const newUser = { userId, username, connected: true }
+					setUsers([...users, newUser])
+				}
+			}
+		},
+		[user, users, findUser, setUsers, handleConnectionStatus]
+	)
+
+	const userDisconnected = useCallback(
+		({ userId }) => handleConnectionStatus(userId, false),
+		[handleConnectionStatus]
+	)
+
 	useEffect(() => {
 		socket.on('users', users => {
-			const messagesArr = []
-			for (const { userId, username } of users) {
-				const newMessage = { type: 'userStatus', userId, username }
-				messagesArr.push(newMessage)
-			}
-			setMessages([...messages, ...messagesArr])
 			setUsers(users)
 		})
 
-		socket.on('session', ({ userId, username }) => {
+		checkIfUserExists()
+
+		socket.on('session', ({ sessionId, userId, username }) => {
+			socket.auth = { sessionId }
+			localStorage.setItem('sessionId', sessionId)
 			setUser({ userId, username })
 		})
 
-		socket.on('user connected', ({ userId, username }) => {
-			const newMessage = { type: 'userStatus', userId, username }
-			setMessages([...messages, newMessage])
-		})
+		socket.on('user connected', user => userConnected(user))
+		socket.on('user disconnected', user => userDisconnected(user))
 		socket.on('new message', ({ userId, username, message }) => {
 			const newMessage = {
 				type: 'message',
@@ -37,7 +80,18 @@ const Main = ({ socket }) => {
 			}
 			setMessages([...messages, newMessage])
 		})
-	}, [socket, messages])
+	}, [
+		socket,
+		user,
+		users,
+		setUsers,
+		findUser,
+		messages,
+		setMessages,
+		checkIfUserExists,
+		userConnected,
+		userDisconnected,
+	])
 
 	function logNewUser() {
 		setUser(newUser)
@@ -62,6 +116,7 @@ const Main = ({ socket }) => {
 				{user.userId && (
 					<Chat
 						user={user}
+						users={users}
 						message={message}
 						messages={messages}
 						sendMessage={sendMessage}

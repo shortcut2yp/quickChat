@@ -13,7 +13,7 @@ const ChatHeader = ({ user }) => {
 					/>
 				</div>
 				<div className="flex-grow-1">
-					<strong>Logged in as {user.username}</strong>
+					<strong>{user.username}</strong>
 				</div>
 			</div>
 		</div>
